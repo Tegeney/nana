@@ -214,15 +214,20 @@ export const ShellGame: React.FC = () => {
               {/* The Gold Ball */}
               {isBallCup && (
                 <div 
-                  className={`absolute bottom-2 w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-[#fcd34d] flex items-center justify-center transition-opacity duration-300 z-0 ${
+                  className={`absolute bottom-2 w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center transition-opacity duration-300 z-0 ${
                     gamePhase === 'showing_ball' || gamePhase === 'revealing' ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <div className="text-xl">⚪</div>
+                  <img 
+                    src="/gold-ball.png" 
+                    alt="Gold Ball"
+                    className="w-full h-full object-contain pointer-events-none select-none drop-shadow-lg mix-blend-screen"
+                    style={{ filter: 'contrast(1.2)' }}
+                  />
                 </div>
               )}
 
-              {/* Ultra-Fast WebP/Data URI Cup Image */}
+              {/* Ultra-Fast WebP/PNG Cup Image */}
               <div 
                 className="w-full aspect-[4/5] flex justify-center items-end relative"
                 style={{ 
@@ -231,10 +236,16 @@ export const ShellGame: React.FC = () => {
                   willChange: 'transform'
                 }}
               >
+                {/* 
+                  Note: The generated images currently have a white background. 
+                  For production, run these through remove.bg or Photoshop to make them transparent,
+                  and convert them to .webp for the ultimate file size!
+                  We use mix-blend-multiply as a temporary hack to hide the white bg.
+                */}
                 <img 
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' width='100%25' height='100%25'%3E%3Cpath d='M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z' fill='%238b4513' /%3E%3Cellipse cx='50' cy='14' rx='20' ry='6' fill='%235c2d0c' /%3E%3C/svg%3E" 
-                  className="w-[110%] h-auto max-h-full pointer-events-none select-none drop-shadow-sm" 
-                  alt="cup"
+                  src={gamePhase === 'revealing' || (gamePhase === 'showing_ball' && isBallCup) ? "/cup-lifted.png" : "/cup-closed.png"} 
+                  className="w-[120%] h-auto max-h-full pointer-events-none select-none drop-shadow-2xl mix-blend-multiply" 
+                  alt="Casino Cup"
                 />
               </div>
 

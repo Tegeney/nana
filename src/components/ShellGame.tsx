@@ -25,7 +25,7 @@ export const ShellGame: React.FC = () => {
 
   // cupPositions array dictates the order they are rendered in the flex container
   const [cupPositions, setCupPositions] = useState([0, 1, 2]);
-  const [ballCupId, setBallCupId] = useState<number>(1); 
+  const [ballCupId, setBallCupId] = useState<number>(1);
   const [selectedCupId, setSelectedCupId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -68,7 +68,7 @@ export const ShellGame: React.FC = () => {
 
     let swaps = 0;
     const maxSwaps = 8; // More swaps for a better effect
-    const swapInterval = 250; 
+    const swapInterval = 250;
 
     const shuffleInterval = setInterval(() => {
       sounds.playShuffleTick();
@@ -100,11 +100,11 @@ export const ShellGame: React.FC = () => {
 
     sounds.playSelect();
     setSelectedCupId(cupId);
-    
+
     const isWin = cupId === ballCupId;
 
     if (isWin) {
-      const winAmount = betAmount + (betAmount * 0.9); 
+      const winAmount = betAmount + (betAmount * 0.9);
       recordWin(winAmount);
       sounds.playWin();
       triggerConfetti();
@@ -143,10 +143,10 @@ export const ShellGame: React.FC = () => {
 
       {/* Play Area using Flexbox and Framer Motion for automatic layout animations */}
       <div className="relative z-10 h-[210px] sm:h-[260px] flex justify-center items-end pb-3 gap-4 sm:gap-12">
-        
+
         {cupPositions.map((cupId, index) => {
           const isBallCup = cupId === ballCupId;
-          
+
           let liftClass = "";
           let opacityClass = "opacity-100";
           let cursorClass = "cursor-default";
@@ -159,14 +159,14 @@ export const ShellGame: React.FC = () => {
             cursorClass = "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:shadow-yellow-500/20 active:scale-95";
           } else if (gamePhase === 'revealing') {
             liftClass = "-translate-y-16 sm:-translate-y-20";
-            if (!isBallCup) opacityClass = "opacity-50"; 
+            if (!isBallCup) opacityClass = "opacity-50";
           }
 
           // Randomize zIndex during shuffle so they cross over each other naturally
           const zIndex = gamePhase === 'shuffling' ? 10 + index : (isBallCup ? 20 : 10);
 
           return (
-            <motion.div 
+            <motion.div
               layout
               key={cupId}
               initial={false}
@@ -181,10 +181,9 @@ export const ShellGame: React.FC = () => {
             >
               {/* The Gold Ball */}
               {isBallCup && (
-                <div 
-                  className={`absolute bottom-3 w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 flex items-center justify-center shadow-lg transition-opacity duration-300 z-0 ${
-                    gamePhase === 'showing_ball' || gamePhase === 'revealing' ? 'opacity-100 glow-gold' : 'opacity-0'
-                  }`}
+                <div
+                  className={`absolute bottom-3 w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 flex items-center justify-center shadow-lg transition-opacity duration-300 z-0 ${gamePhase === 'showing_ball' || gamePhase === 'revealing' ? 'opacity-100 glow-gold' : 'opacity-0'
+                    }`}
                 >
                   <div className="w-9 h-9 sm:w-13 sm:h-13 rounded-full bg-radial-gradient(circle, transparent 20%, rgba(255,255,255,0.4) 100%) absolute inset-0 opacity-70"></div>
                   <div className="text-xl drop-shadow-md">⚪</div>
@@ -216,7 +215,7 @@ export const ShellGame: React.FC = () => {
                       <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                     </radialGradient>
                   </defs>
-                  
+
                   <g>
                     <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="url(#cupGrad)" />
                     <ellipse cx="50" cy="14" rx="20" ry="6" fill="#7a3d10" />
@@ -230,9 +229,8 @@ export const ShellGame: React.FC = () => {
 
               {/* Guess Indicator */}
               {gamePhase === 'revealing' && selectedCupId === cupId && (
-                <div className={`absolute -bottom-7 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  isBallCup ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                }`}>
+                <div className={`absolute -bottom-7 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isBallCup ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                  }`}>
                   {isBallCup ? t.correct : t.empty}
                 </div>
               )}
@@ -252,9 +250,8 @@ export const ShellGame: React.FC = () => {
         </div>
       )}
 
-      <div className={`relative z-10 transition-all duration-500 flex justify-center ${
-        gamePhase === 'revealing' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
-      }`}>
+      <div className={`relative z-10 transition-all duration-500 flex justify-center ${gamePhase === 'revealing' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
+        }`}>
         <div className="max-w-md mx-auto bg-black/60 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center shadow-inner">
           {lastResult === 'win' ? (
             <div className="text-emerald-400 font-bold text-base flex items-center gap-2">

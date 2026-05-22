@@ -8,7 +8,7 @@ import { persist } from 'zustand/middleware';
  * - guessing: Shuffle done. User taps a cup to guess where ball went.
  * - revealing: Result is shown for 2 seconds before auto-reset.
  */
-export type GamePhase = 'showing_ball' | 'shuffling' | 'guessing' | 'revealing';
+export type GamePhase = 'showing_ball' | 'shuffling' | 'guessing' | 'revealing' | 'continue_prompt';
 export type GameResult = 'win' | 'loss' | null;
 
 interface GameState {
@@ -19,6 +19,7 @@ interface GameState {
   betAmount: number;
   lastResult: GameResult;
   lastWinAmount: number;
+  currentMultiplier: number;
   gamePhase: GamePhase;
 
   // Stats
@@ -34,6 +35,7 @@ interface GameState {
   setLastResult: (result: GameResult, winAmount?: number) => void;
   recordWin: (winAmount: number) => void;
   recordLoss: () => void;
+  cashout: () => void;
   resetBalance: () => void;
   resetStats: () => void;
   // Language
@@ -81,6 +83,7 @@ export const useGameStore = create<GameState>()(
       totalGames: 0,
       wins: 0,
       losses: 0,
+      currentMultiplier: 0,
 
       language: 'en',
       toggleLanguage: () => set((s) => ({ language: s.language === 'en' ? 'am' : 'en' })),
@@ -88,7 +91,7 @@ export const useGameStore = create<GameState>()(
       setBetAmount: (amount) => set({ betAmount: amount }),
 
       deductBet: () =>
-        set((s) => ({ balance: Math.max(0, s.balance - s.betAmount) })),
+        set((s) => ({ balance: Math.max(0, s.balance - s.betAmount), currentMultiplier: 0 })),
 
       addWinnings: (amount) =>
         set((s) => ({ balance: s.balance + amount })),
@@ -100,15 +103,16 @@ export const useGameStore = create<GameState>()(
 
       recordWin: (winAmount) =>
         set((s) => {
+          // Increase multiplier: 1.9x, 3.5x, 6.0x, 10.0x, etc.
+          const nextMultiplier = s.currentMultiplier === 0 ? 1.9 : s.currentMultiplier * 1.8;
+          
           const nextState = {
-            balance: s.balance + winAmount,
+            // DO NOT add to balance yet! They must cashout.
             lastResult: 'win' as const,
-            lastWinAmount: winAmount,
-            totalGames: s.totalGames + 1,
-            wins: s.wins + 1,
+            lastWinAmount: s.betAmount * nextMultiplier,
+            currentMultiplier: nextMultiplier,
             gamePhase: 'revealing' as const,
           };
-          syncLeaderboard(nextState.balance, nextState.totalGames, nextState.wins);
           return nextState;
         }),
 
@@ -117,6 +121,7 @@ export const useGameStore = create<GameState>()(
           const nextState = {
             lastResult: 'loss' as const,
             lastWinAmount: 0,
+            currentMultiplier: 0,
             totalGames: s.totalGames + 1,
             losses: s.losses + 1,
             gamePhase: 'revealing' as const,
@@ -125,11 +130,29 @@ export const useGameStore = create<GameState>()(
           return nextState;
         }),
 
+      cashout: () =>
+        set((s) => {
+          if (s.currentMultiplier === 0) return {};
+          const winAmount = s.betAmount * s.currentMultiplier;
+          const nextState = {
+            balance: s.balance + winAmount,
+            currentMultiplier: 0,
+            lastWinAmount: winAmount,
+            totalGames: s.totalGames + 1,
+            wins: s.wins + 1,
+            gamePhase: 'showing_ball' as const,
+            lastResult: 'win' as const,
+          };
+          syncLeaderboard(nextState.balance, nextState.totalGames, nextState.wins);
+          return nextState;
+        }),
+
       resetBalance: () =>
         set({
           balance: INITIAL_BALANCE,
           lastResult: null,
           lastWinAmount: 0,
+          currentMultiplier: 0,
           gamePhase: 'showing_ball',
         }),
 

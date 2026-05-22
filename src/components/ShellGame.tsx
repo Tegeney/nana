@@ -16,6 +16,8 @@ export const ShellGame: React.FC = () => {
     recordLoss,
     lastResult,
     lastWinAmount,
+    currentMultiplier,
+    cashout,
     language
   } = useGameStore();
 
@@ -73,7 +75,7 @@ export const ShellGame: React.FC = () => {
   }, []);
 
   const handleShuffleStart = () => {
-    if (balance < betAmount) {
+    if (currentMultiplier === 0 && balance < betAmount) {
       setErrorMessage(language === 'en' ? "Insufficient balance! Reduce your bet." : "ለማወራረድ በቂ ሂሳብ የለም! ውርርድዎን ይቀንሱ።");
       sounds.playError();
       setTimeout(() => setErrorMessage(null), 3000);
@@ -81,7 +83,9 @@ export const ShellGame: React.FC = () => {
     }
 
     setErrorMessage(null);
-    deductBet();
+    if (currentMultiplier === 0) {
+      deductBet();
+    }
     setGamePhase('shuffling');
     sounds.playSelect();
 
@@ -137,8 +141,7 @@ export const ShellGame: React.FC = () => {
     const isWin = cupId === ballCupId;
 
     if (isWin) {
-      const winAmount = betAmount + (betAmount * 0.9); 
-      recordWin(winAmount);
+      recordWin(0); // Win amount is calculated by the multiplier store logic
       sounds.playWin();
       triggerConfetti();
     } else {
@@ -147,7 +150,11 @@ export const ShellGame: React.FC = () => {
     }
 
     setTimeout(() => {
-      setGamePhase('showing_ball');
+      if (isWin) {
+        setGamePhase('continue_prompt');
+      } else {
+        setGamePhase('showing_ball');
+      }
     }, 3500);
   };
 
@@ -162,6 +169,7 @@ export const ShellGame: React.FC = () => {
           {gamePhase === 'shuffling' && t.shuffling}
           {gamePhase === 'guessing' && t.whereIsBall}
           {gamePhase === 'revealing' && (lastResult === 'win' ? t.foundIt : t.wrongCup)}
+          {gamePhase === 'continue_prompt' && 'Cashout or Double Up!'}
         </h2>
       </div>
 
@@ -186,7 +194,7 @@ export const ShellGame: React.FC = () => {
             yOffset = isBallCup ? -60 : 0;
           } else if (gamePhase === 'guessing') {
             cursorClass = "cursor-pointer md:hover:-translate-y-2 active:scale-95";
-          } else if (gamePhase === 'revealing') {
+          } else if (gamePhase === 'revealing' || gamePhase === 'continue_prompt') {
             yOffset = -60;
             if (!isBallCup) opacity = 0.5; 
           }
@@ -273,13 +281,31 @@ export const ShellGame: React.FC = () => {
         </div>
       )}
 
+      {gamePhase === 'continue_prompt' && (
+        <div className="relative z-10 flex flex-col sm:flex-row justify-center mt-3 gap-3">
+          <button
+            onClick={cashout}
+            className="px-6 py-2.5 rounded-xl bg-emerald-600 active:scale-95 transition-transform text-white font-extrabold tracking-wider text-base"
+          >
+            Cashout Br {lastWinAmount.toFixed(2)}
+          </button>
+          <button
+            onClick={handleShuffleStart}
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 active:scale-95 transition-transform text-table-dark font-extrabold tracking-wider text-base"
+          >
+            Play ({currentMultiplier === 0 ? 1.9 : (currentMultiplier * 1.8).toFixed(1)}x)
+          </button>
+        </div>
+      )}
+
       <div className={`relative z-10 transition-opacity duration-300 flex justify-center ${
-        gamePhase === 'revealing' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
+        gamePhase === 'revealing' || gamePhase === 'continue_prompt' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
       }`}>
         <div className="max-w-md mx-auto bg-black/40 rounded-xl p-3 flex flex-col items-center text-center">
           {lastResult === 'win' ? (
             <div className="text-emerald-400 font-bold text-base flex items-center gap-2">
-              <Trophy className="w-4.5 h-4.5" /> +Br {lastWinAmount.toFixed(2)}
+              <Trophy className="w-4.5 h-4.5" /> 
+              {gamePhase === 'continue_prompt' ? `At Risk: Br ${lastWinAmount.toFixed(2)} (${currentMultiplier.toFixed(1)}x)` : `+Br ${lastWinAmount.toFixed(2)}`}
             </div>
           ) : (
             <div className="text-rose-400 font-bold text-base flex items-center gap-2">

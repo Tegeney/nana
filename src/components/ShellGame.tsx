@@ -28,13 +28,15 @@ export const ShellGame: React.FC = () => {
   const shuffleIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const autoShuffleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleCashout = () => {
-    if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
-    if (autoShuffleTimeoutRef.current) clearTimeout(autoShuffleTimeoutRef.current);
-    cashout();
-  };
+  // If user cashes out from Controls, multiplier drops to 0. Instantly abort any active spins/timeouts.
+  useEffect(() => {
+    if (currentMultiplier === 0) {
+      if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
+      if (autoShuffleTimeoutRef.current) clearTimeout(autoShuffleTimeoutRef.current);
+    }
+  }, [currentMultiplier]);
 
-  const [ballCupId, setBallCupId] = useState<number>(1); 
+  const [ballCupId, setBallCupId] = useState<number>(1);  
   const [selectedCupId, setSelectedCupId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -284,18 +286,6 @@ export const ShellGame: React.FC = () => {
             className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 active:scale-95 transition-transform text-table-dark font-extrabold tracking-wider text-base"
           >
             {t.shuffleAndBet} {betAmount}
-          </button>
-        </div>
-      )}
-
-      {['guessing', 'revealing', 'shuffling'].includes(gamePhase) && currentMultiplier > 0 && (
-        <div className="relative z-10 flex justify-center mt-4">
-          <button
-            onClick={handleCashout}
-            className="px-10 py-3 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 active:scale-95 transition-all text-white font-black tracking-wider shadow-[0_4px_20px_rgba(16,185,129,0.5)] border border-emerald-300/50 flex flex-col items-center"
-          >
-            <span className="text-sm opacity-90 leading-tight">CASHOUT</span>
-            <span className="text-xl leading-tight">Br {lastWinAmount.toFixed(2)}</span>
           </button>
         </div>
       )}

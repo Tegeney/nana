@@ -25,6 +25,14 @@ export const ShellGame: React.FC = () => {
 
   const cupRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
   const currentPositions = useRef([0, 1, 2]); // Tracks positions without triggering React re-renders
+  const shuffleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoShuffleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleCashout = () => {
+    if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
+    if (autoShuffleTimeoutRef.current) clearTimeout(autoShuffleTimeoutRef.current);
+    cashout();
+  };
 
   const [ballCupId, setBallCupId] = useState<number>(1); 
   const [selectedCupId, setSelectedCupId] = useState<number | null>(null);
@@ -93,7 +101,7 @@ export const ShellGame: React.FC = () => {
     const maxSwaps = 10;
     const swapInterval = 280; // Optimized timing for linear CSS transitions
 
-    const shuffleInterval = setInterval(() => {
+    shuffleIntervalRef.current = setInterval(() => {
       sounds.playShuffleTick();
       
       // Calculate purely mathematically
@@ -124,7 +132,7 @@ export const ShellGame: React.FC = () => {
 
       swaps++;
       if (swaps >= maxSwaps) {
-        clearInterval(shuffleInterval);
+        if (shuffleIntervalRef.current) clearInterval(shuffleIntervalRef.current);
         setTimeout(() => {
           setGamePhase('guessing');
         }, swapInterval + 50);
@@ -144,8 +152,10 @@ export const ShellGame: React.FC = () => {
       recordWin(0);
       sounds.playWin();
       triggerConfetti();
-      setTimeout(() => {
-        handleShuffleStart();
+      autoShuffleTimeoutRef.current = setTimeout(() => {
+        if (useGameStore.getState().currentMultiplier > 0) {
+          handleShuffleStart();
+        }
       }, 2000);
     } else {
       recordLoss();
@@ -278,10 +288,10 @@ export const ShellGame: React.FC = () => {
         </div>
       )}
 
-      {gamePhase === 'guessing' && currentMultiplier > 0 && (
+      {['guessing', 'revealing', 'shuffling'].includes(gamePhase) && currentMultiplier > 0 && (
         <div className="relative z-10 flex justify-center mt-4">
           <button
-            onClick={cashout}
+            onClick={handleCashout}
             className="px-10 py-3 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 active:scale-95 transition-all text-white font-black tracking-wider shadow-[0_4px_20px_rgba(16,185,129,0.5)] border border-emerald-300/50 flex flex-col items-center"
           >
             <span className="text-sm opacity-90 leading-tight">CASHOUT</span>

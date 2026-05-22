@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { sounds } from '../utils/audio';
 import canvasConfetti from 'canvas-confetti';
 import { Trophy, Frown, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { translations } from '../utils/translations';
 
 export const ShellGame: React.FC = () => {
@@ -22,8 +21,9 @@ export const ShellGame: React.FC = () => {
 
   const t = translations[language];
 
-  // cupPositions array dictates the order: [leftCupId, centerCupId, rightCupId]
-  const [cupPositions, setCupPositions] = useState([0, 1, 2]);
+  const cupRefs = useRef<(HTMLDivElement | null)[]>([null, null, null]);
+  const currentPositions = useRef([0, 1, 2]); // Tracks positions without triggering React re-renders
+
   const [ballCupId, setBallCupId] = useState<number>(1); 
   const [selectedCupId, setSelectedCupId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -32,8 +32,25 @@ export const ShellGame: React.FC = () => {
     if (gamePhase === 'showing_ball') {
       const randomCup = Math.floor(Math.random() * 3);
       setBallCupId(randomCup);
-      setCupPositions([0, 1, 2]);
+      currentPositions.current = [0, 1, 2];
       setSelectedCupId(null);
+      
+      // Reset DOM positions instantly
+      const isMobile = window.innerWidth < 640;
+      const gap = isMobile ? 95 : 130;
+      [0, 1, 2].forEach(cupId => {
+        const idx = currentPositions.current.indexOf(cupId);
+        const xOffset = (idx - 1) * gap;
+        const el = cupRefs.current[cupId];
+        if (el) {
+          el.style.transition = 'none'; // Snap instantly
+          el.style.transform = `translate3d(${xOffset}px, 0px, 0)`;
+          el.style.zIndex = '10';
+          // Force reflow
+          void el.offsetHeight;
+          el.style.transition = 'transform 250ms linear, opacity 300ms ease-in-out';
+        }
+      });
     }
   }, [gamePhase]);
 
@@ -69,22 +86,36 @@ export const ShellGame: React.FC = () => {
     sounds.playSelect();
 
     let swaps = 0;
-    const maxSwaps = 8;
-    const swapInterval = 400; // Increased from 250 for smoother animation spacing
+    const maxSwaps = 10;
+    const swapInterval = 280; // Optimized timing for linear CSS transitions
 
     const shuffleInterval = setInterval(() => {
       sounds.playShuffleTick();
-      setCupPositions(prev => {
-        const next = [...prev];
-        const idx1 = Math.floor(Math.random() * 3);
-        let idx2 = Math.floor(Math.random() * 3);
-        while (idx1 === idx2) {
-          idx2 = Math.floor(Math.random() * 3);
+      
+      // Calculate purely mathematically
+      const pos = currentPositions.current;
+      const idx1 = Math.floor(Math.random() * 3);
+      let idx2 = Math.floor(Math.random() * 3);
+      while (idx1 === idx2) {
+        idx2 = Math.floor(Math.random() * 3);
+      }
+      
+      const temp = pos[idx1];
+      pos[idx1] = pos[idx2];
+      pos[idx2] = temp;
+      
+      // Apply directly to DOM without touching React State!
+      const isMobile = window.innerWidth < 640;
+      const gap = isMobile ? 95 : 130;
+
+      [0, 1, 2].forEach(cupId => {
+        const index = pos.indexOf(cupId);
+        const xOffset = (index - 1) * gap;
+        const el = cupRefs.current[cupId];
+        if (el) {
+          el.style.transform = `translate3d(${xOffset}px, 0px, 0)`;
+          el.style.zIndex = (10 + index).toString();
         }
-        const temp = next[idx1];
-        next[idx1] = next[idx2];
-        next[idx2] = temp;
-        return next;
       });
 
       swaps++;
@@ -92,7 +123,7 @@ export const ShellGame: React.FC = () => {
         clearInterval(shuffleInterval);
         setTimeout(() => {
           setGamePhase('guessing');
-        }, swapInterval + 100);
+        }, swapInterval + 50);
       }
     }, swapInterval);
   };
@@ -141,11 +172,11 @@ export const ShellGame: React.FC = () => {
         </div>
       )}
 
-      {/* Play Area using manual CSS transforms instead of layout */}
+      {/* Pure CSS transform play area */}
       <div className="relative z-10 h-[210px] sm:h-[260px] flex justify-center items-end pb-3 w-full max-w-sm mx-auto">
         {[0, 1, 2].map((cupId) => {
           const isBallCup = cupId === ballCupId;
-          const index = cupPositions.indexOf(cupId);
+          const index = currentPositions.current.indexOf(cupId);
           
           let yOffset = 0;
           let opacity = 1;
@@ -154,31 +185,30 @@ export const ShellGame: React.FC = () => {
           if (gamePhase === 'showing_ball') {
             yOffset = isBallCup ? -60 : 0;
           } else if (gamePhase === 'guessing') {
-            cursorClass = "cursor-pointer md:hover:-translate-y-2 md:hover:shadow-2xl active:scale-95";
+            cursorClass = "cursor-pointer md:hover:-translate-y-2 active:scale-95";
           } else if (gamePhase === 'revealing') {
             yOffset = -60;
             if (!isBallCup) opacity = 0.5; 
           }
 
-          // Randomize zIndex during shuffle so they cross over each other naturally
           const zIndex = gamePhase === 'shuffling' ? 10 + index : (isBallCup ? 20 : 10);
           
-          // Calculate manual X offset instead of flex layout
           const isMobile = window.innerWidth < 640;
           const gap = isMobile ? 95 : 130;
           const xOffset = (index - 1) * gap;
 
           return (
-            <motion.div 
+            <div 
               key={cupId}
-              initial={false}
-              animate={{ x: xOffset, opacity }}
-              transition={{
-                duration: 0.18,
-                ease: "easeInOut"
-              }}
+              ref={el => cupRefs.current[cupId] = el}
               className={`absolute bottom-3 w-[85px] sm:w-[120px] flex flex-col items-center ${cursorClass}`}
-              style={{ zIndex }}
+              style={{ 
+                zIndex,
+                opacity,
+                transform: `translate3d(${xOffset}px, 0px, 0)`,
+                transition: 'transform 250ms linear, opacity 300ms ease-in-out',
+                willChange: 'transform'
+              }}
               onClick={() => gamePhase === 'guessing' && handleCupClick(cupId)}
             >
               {/* The Gold Ball */}
@@ -188,20 +218,24 @@ export const ShellGame: React.FC = () => {
                     gamePhase === 'showing_ball' || gamePhase === 'revealing' ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <div className="text-xl drop-shadow-sm">⚪</div>
+                  <div className="text-xl">⚪</div>
                 </div>
               )}
 
-              {/* Simplified Flat SVG Cup for Mobile Performance */}
+              {/* Ultra-Fast WebP/Data URI Cup Image */}
               <div 
-                className="w-full aspect-[4/5] flex justify-center items-end transition-transform duration-300 z-10 relative"
-                style={{ transform: `translateY(${yOffset}px)` }}
+                className="w-full aspect-[4/5] flex justify-center items-end relative"
+                style={{ 
+                  transform: `translate3d(0, ${yOffset}px, 0)`,
+                  transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+                  willChange: 'transform'
+                }}
               >
-                <svg viewBox="0 0 100 120" className="w-[110%] h-auto max-h-full">
-                  <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="#8b4513" />
-                  <ellipse cx="50" cy="14" rx="20" ry="6" fill="#5c2d0c" />
-                  <ellipse cx="50" cy="107" rx="36" ry="7" fill="transparent" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                </svg>
+                <img 
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' width='100%25' height='100%25'%3E%3Cpath d='M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z' fill='%238b4513' /%3E%3Cellipse cx='50' cy='14' rx='20' ry='6' fill='%235c2d0c' /%3E%3C/svg%3E" 
+                  className="w-[110%] h-auto max-h-full pointer-events-none select-none drop-shadow-sm" 
+                  alt="cup"
+                />
               </div>
 
               {/* Guess Indicator */}
@@ -212,7 +246,7 @@ export const ShellGame: React.FC = () => {
                   {isBallCup ? t.correct : t.empty}
                 </div>
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>

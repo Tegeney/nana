@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { sounds } from '../utils/audio';
 import canvasConfetti from 'canvas-confetti';
-import { Sparkles, Trophy, Frown, AlertCircle, Coins } from 'lucide-react';
+import { Trophy, Frown, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { translations } from '../utils/translations';
 
@@ -10,7 +10,6 @@ export const ShellGame: React.FC = () => {
   const {
     balance,
     betAmount,
-    setBetAmount,
     gamePhase,
     setGamePhase,
     deductBet,
@@ -23,9 +22,9 @@ export const ShellGame: React.FC = () => {
 
   const t = translations[language];
 
-  // cupPositions array dictates the order they are rendered in the flex container
+  // cupPositions array dictates the order: [leftCupId, centerCupId, rightCupId]
   const [cupPositions, setCupPositions] = useState([0, 1, 2]);
-  const [ballCupId, setBallCupId] = useState<number>(1);
+  const [ballCupId, setBallCupId] = useState<number>(1); 
   const [selectedCupId, setSelectedCupId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -39,6 +38,9 @@ export const ShellGame: React.FC = () => {
   }, [gamePhase]);
 
   const triggerConfetti = useCallback(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) return; // Disable on mobile entirely for performance
+
     const duration = 2 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
@@ -47,7 +49,7 @@ export const ShellGame: React.FC = () => {
     const interval = setInterval(() => {
       const timeLeft = animationEnd - Date.now();
       if (timeLeft <= 0) return clearInterval(interval);
-      const particleCount = 50 * (timeLeft / duration);
+      const particleCount = 15; // Reduced from 50
       canvasConfetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
       canvasConfetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
     }, 250);
@@ -67,8 +69,8 @@ export const ShellGame: React.FC = () => {
     sounds.playSelect();
 
     let swaps = 0;
-    const maxSwaps = 8; // More swaps for a better effect
-    const swapInterval = 250;
+    const maxSwaps = 8;
+    const swapInterval = 400; // Increased from 250 for smoother animation spacing
 
     const shuffleInterval = setInterval(() => {
       sounds.playShuffleTick();
@@ -100,11 +102,11 @@ export const ShellGame: React.FC = () => {
 
     sounds.playSelect();
     setSelectedCupId(cupId);
-
+    
     const isWin = cupId === ballCupId;
 
     if (isWin) {
-      const winAmount = betAmount + (betAmount * 0.9);
+      const winAmount = betAmount + (betAmount * 0.9); 
       recordWin(winAmount);
       sounds.playWin();
       triggerConfetti();
@@ -119,9 +121,7 @@ export const ShellGame: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl relative overflow-hidden casino-felt">
-      <div className="absolute inset-0 radial-vignette rounded-3xl pointer-events-none"></div>
-
+    <div className="w-full max-w-4xl mx-auto bg-[#1b1510] border-2 border-yellow-900/40 rounded-3xl p-4 sm:p-5 relative overflow-hidden">
       <div className="relative z-10 flex flex-col items-center mb-2">
         <span className="text-[9px] tracking-[0.2em] font-extrabold text-yellow-500 bg-yellow-500/10 px-2.5 py-0.5 rounded-full border border-yellow-500/20 mb-1">
           {t.casinoFelt}
@@ -135,102 +135,77 @@ export const ShellGame: React.FC = () => {
       </div>
 
       {errorMessage && (
-        <div className="relative z-10 flex items-center justify-center gap-2 text-rose-300 text-xs font-semibold bg-rose-950/40 border border-rose-500/20 rounded-xl p-2 mb-3 max-w-md mx-auto animate-pulse">
+        <div className="relative z-10 flex items-center justify-center gap-2 text-rose-300 text-xs font-semibold bg-rose-950/40 border border-rose-500/20 rounded-xl p-2 mb-3 max-w-md mx-auto">
           <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Play Area using Flexbox and Framer Motion for automatic layout animations */}
-      <div className="relative z-10 h-[210px] sm:h-[260px] flex justify-center items-end pb-3 gap-4 sm:gap-12">
-
-        {cupPositions.map((cupId, index) => {
+      {/* Play Area using manual CSS transforms instead of layout */}
+      <div className="relative z-10 h-[210px] sm:h-[260px] flex justify-center items-end pb-3 w-full max-w-sm mx-auto">
+        {[0, 1, 2].map((cupId) => {
           const isBallCup = cupId === ballCupId;
-
-          let liftClass = "";
-          let opacityClass = "opacity-100";
+          const index = cupPositions.indexOf(cupId);
+          
+          let yOffset = 0;
+          let opacity = 1;
           let cursorClass = "cursor-default";
 
           if (gamePhase === 'showing_ball') {
-            liftClass = isBallCup ? "-translate-y-16 sm:-translate-y-20" : "translate-y-0";
-          } else if (gamePhase === 'shuffling') {
-            liftClass = "translate-y-0";
+            yOffset = isBallCup ? -60 : 0;
           } else if (gamePhase === 'guessing') {
-            cursorClass = "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:shadow-yellow-500/20 active:scale-95";
+            cursorClass = "cursor-pointer md:hover:-translate-y-2 md:hover:shadow-2xl active:scale-95";
           } else if (gamePhase === 'revealing') {
-            liftClass = "-translate-y-16 sm:-translate-y-20";
-            if (!isBallCup) opacityClass = "opacity-50";
+            yOffset = -60;
+            if (!isBallCup) opacity = 0.5; 
           }
 
           // Randomize zIndex during shuffle so they cross over each other naturally
           const zIndex = gamePhase === 'shuffling' ? 10 + index : (isBallCup ? 20 : 10);
+          
+          // Calculate manual X offset instead of flex layout
+          const isMobile = window.innerWidth < 640;
+          const gap = isMobile ? 95 : 130;
+          const xOffset = (index - 1) * gap;
 
           return (
-            <motion.div
-              layout
+            <motion.div 
               key={cupId}
               initial={false}
+              animate={{ x: xOffset, y: yOffset, opacity }}
               transition={{
-                type: "tween",
-                duration: 0.2,
+                duration: 0.18,
                 ease: "easeInOut"
               }}
-              className={`relative w-22 sm:w-32 flex flex-col items-center ${cursorClass} ${opacityClass}`}
+              className={`absolute bottom-3 w-[85px] sm:w-[120px] flex flex-col items-center ${cursorClass}`}
               style={{ zIndex }}
               onClick={() => gamePhase === 'guessing' && handleCupClick(cupId)}
             >
               {/* The Gold Ball */}
               {isBallCup && (
-                <div
-                  className={`absolute bottom-3 w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 flex items-center justify-center shadow-lg transition-opacity duration-300 z-0 ${gamePhase === 'showing_ball' || gamePhase === 'revealing' ? 'opacity-100 glow-gold' : 'opacity-0'
-                    }`}
+                <div 
+                  className={`absolute bottom-2 w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-[#fcd34d] flex items-center justify-center transition-opacity duration-300 z-0 ${
+                    gamePhase === 'showing_ball' || gamePhase === 'revealing' ? 'opacity-100' : 'opacity-0'
+                  }`}
                 >
-                  <div className="w-9 h-9 sm:w-13 sm:h-13 rounded-full bg-radial-gradient(circle, transparent 20%, rgba(255,255,255,0.4) 100%) absolute inset-0 opacity-70"></div>
-                  <div className="text-xl drop-shadow-md">⚪</div>
+                  <div className="text-xl drop-shadow-sm">⚪</div>
                 </div>
               )}
 
-              {/* The Realistic 3D Cup Graphic */}
-              <div
-                className={`w-full aspect-[4/5] flex justify-center items-end transition-transform duration-300 z-10 relative ${liftClass}`}
-              >
-                <svg viewBox="0 0 100 120" className="w-[120%] h-auto max-h-full drop-shadow-xl">
-                  <defs>
-                    <linearGradient id="cupGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#4a2511" />
-                      <stop offset="15%" stopColor="#8b4513" />
-                      <stop offset="50%" stopColor="#d2691e" />
-                      <stop offset="85%" stopColor="#8b4513" />
-                      <stop offset="100%" stopColor="#301508" />
-                    </linearGradient>
-                    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#2a1205" />
-                      <stop offset="20%" stopColor="#8b4513" />
-                      <stop offset="50%" stopColor="#e8924f" />
-                      <stop offset="80%" stopColor="#8b4513" />
-                      <stop offset="100%" stopColor="#2a1205" />
-                    </linearGradient>
-                    <radialGradient id="highlight" cx="35%" cy="30%" r="60%">
-                      <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
-                      <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                    </radialGradient>
-                  </defs>
-
-                  <g>
-                    <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="url(#cupGrad)" />
-                    <ellipse cx="50" cy="14" rx="20" ry="6" fill="#7a3d10" />
-                    <ellipse cx="50" cy="14" rx="20" ry="6" fill="rgba(0,0,0,0.15)" />
-                    <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="url(#highlight)" />
-                    <path d="M 14 105 C 14 115, 86 115, 86 105 L 90 108 C 90 120, 10 120, 10 108 Z" fill="url(#rimGrad)" />
-                    <ellipse cx="50" cy="107" rx="36" ry="7" fill="transparent" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
-                  </g>
+              {/* Simplified Flat SVG Cup for Mobile Performance */}
+              <div className="w-full aspect-[4/5] flex justify-center items-end transition-transform duration-300 z-10 relative">
+                <svg viewBox="0 0 100 120" className="w-[110%] h-auto max-h-full">
+                  <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="#8b4513" />
+                  <ellipse cx="50" cy="14" rx="20" ry="6" fill="#5c2d0c" />
+                  <ellipse cx="50" cy="107" rx="36" ry="7" fill="transparent" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
                 </svg>
               </div>
 
               {/* Guess Indicator */}
               {gamePhase === 'revealing' && selectedCupId === cupId && (
-                <div className={`absolute -bottom-7 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isBallCup ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                  }`}>
+                <div className={`absolute -bottom-6 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  isBallCup ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                }`}>
                   {isBallCup ? t.correct : t.empty}
                 </div>
               )}
@@ -243,16 +218,17 @@ export const ShellGame: React.FC = () => {
         <div className="relative z-10 flex justify-center mt-3">
           <button
             onClick={handleShuffleStart}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-table-dark font-extrabold tracking-wider shadow-[0_0_20px_rgba(255,215,0,0.4)] active:scale-95 transition-all text-base"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 active:scale-95 transition-transform text-table-dark font-extrabold tracking-wider text-base"
           >
             {t.shuffleAndBet} {betAmount}
           </button>
         </div>
       )}
 
-      <div className={`relative z-10 transition-all duration-500 flex justify-center ${gamePhase === 'revealing' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
-        }`}>
-        <div className="max-w-md mx-auto bg-black/60 border border-white/10 rounded-2xl p-3 flex flex-col items-center text-center shadow-inner">
+      <div className={`relative z-10 transition-opacity duration-300 flex justify-center ${
+        gamePhase === 'revealing' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
+      }`}>
+        <div className="max-w-md mx-auto bg-black/40 rounded-xl p-3 flex flex-col items-center text-center">
           {lastResult === 'win' ? (
             <div className="text-emerald-400 font-bold text-base flex items-center gap-2">
               <Trophy className="w-4.5 h-4.5" /> +Br {lastWinAmount.toFixed(2)}

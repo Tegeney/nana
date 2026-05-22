@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background: radial-gradient(circle at center, #1a472a 0%, #0e2a1a 100%);
+    font-family: 'Outfit', 'Inter', sans-serif;
+  }
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-heavy {
+  background: rgba(14, 42, 26, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom Casino Felt Texture Overlay */
+.casino-felt {
+  position: relative;
+}
+
+.casino-felt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 0),
+                    radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 0);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+  pointer-events: none;
+}
+
+/* Shake Animation for Cups */
+@keyframes cup-shake-0 {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-15px, 5px); }
+  40% { transform: translate(20px, -5px); }
+  60% { transform: translate(-10px, 8px); }
+  80% { transform: translate(15px, -8px); }
+}
+
+@keyframes cup-shake-1 {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(20px, -8px); }
+  40% { transform: translate(-15px, 8px); }
+  60% { transform: translate(15px, -5px); }
+  80% { transform: translate(-10px, 5px); }
+}
+
+@keyframes cup-shake-2 {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-10px, -5px); }
+  40% { transform: translate(15px, 8px); }
+  60% { transform: translate(-20px, -8px); }
+  80% { transform: translate(10px, 5px); }
+}
+
+.animate-shake-0 {
+  animation: cup-shake-0 var(--shuffle-dur, 0.8s) ease-in-out infinite;
+}
+
+.animate-shake-1 {
+  animation: cup-shake-1 var(--shuffle-dur, 0.8s) ease-in-out infinite;
+}
+
+.animate-shake-2 {
+  animation: cup-shake-2 var(--shuffle-dur, 0.8s) ease-in-out infinite;
+}
+
+/* Gold glow and shadow effects */
+.glow-gold {
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.35);
+}
+
+.glow-gold-subtle {
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.15);
+}
+
+.text-glow-gold {
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+/* Transition utility for cup lift */
+.cup-container {
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Confetti particles */
+.canvas-confetti-holder {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Premium radial green vignette */
+.radial-vignette {
+  background: radial-gradient(circle, transparent 20%, rgba(0, 0, 0, 0.6) 100%);
+  pointer-events: none;
+}

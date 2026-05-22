@@ -41,11 +41,13 @@ interface GameState {
   toggleLanguage: () => void;
 }
 
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const INITIAL_BALANCE = 100;
 
 const syncLeaderboard = async (balance: number, gamesPlayed: number, wins: number) => {
+  if (!isSupabaseConfigured) return;
+
   try {
     const username = localStorage.getItem('tg_username') || 'Player_' + Math.floor(Math.random() * 9000 + 1000);
     localStorage.setItem('tg_username', username);

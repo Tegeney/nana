@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, AlertCircle } from 'lucide-react';
 import { useGameStore } from '../store/useGameStore';
 import { translations } from '../utils/translations';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface LeaderboardEntry {
   username: string;
@@ -9,8 +10,6 @@ interface LeaderboardEntry {
   games_played: number;
   wins: number;
 }
-
-import { supabase } from '../lib/supabase';
 
 export const LeaderboardView: React.FC = () => {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
@@ -22,6 +21,12 @@ export const LeaderboardView: React.FC = () => {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      if (!isSupabaseConfigured) {
+        setError("Supabase database connection is not configured.");
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('leaderboards')

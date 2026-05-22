@@ -171,10 +171,9 @@ export const ShellGame: React.FC = () => {
               key={cupId}
               initial={false}
               transition={{
-                type: "spring",
-                stiffness: 150,
-                damping: 20,
-                mass: 1
+                type: "tween",
+                duration: 0.2,
+                ease: "easeInOut"
               }}
               className={`relative w-22 sm:w-32 flex flex-col items-center ${cursorClass} ${opacityClass}`}
               style={{ zIndex }}
@@ -196,7 +195,7 @@ export const ShellGame: React.FC = () => {
               <div
                 className={`w-full aspect-[4/5] flex justify-center items-end transition-transform duration-300 z-10 relative ${liftClass}`}
               >
-                <svg viewBox="0 0 100 120" className="w-[120%] h-auto max-h-full drop-shadow-2xl">
+                <svg viewBox="0 0 100 120" className="w-[120%] h-auto max-h-full drop-shadow-xl">
                   <defs>
                     <linearGradient id="cupGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#4a2511" />
@@ -216,12 +215,9 @@ export const ShellGame: React.FC = () => {
                       <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
                       <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                     </radialGradient>
-                    <filter id="shadow">
-                      <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#000" floodOpacity="0.6" />
-                    </filter>
                   </defs>
                   
-                  <g filter="url(#shadow)">
+                  <g>
                     <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="url(#cupGrad)" />
                     <ellipse cx="50" cy="14" rx="20" ry="6" fill="#7a3d10" />
                     <ellipse cx="50" cy="14" rx="20" ry="6" fill="rgba(0,0,0,0.15)" />

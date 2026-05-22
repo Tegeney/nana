@@ -141,21 +141,19 @@ export const ShellGame: React.FC = () => {
     const isWin = cupId === ballCupId;
 
     if (isWin) {
-      recordWin(0); // Win amount is calculated by the multiplier store logic
+      recordWin(0);
       sounds.playWin();
       triggerConfetti();
+      setTimeout(() => {
+        handleShuffleStart();
+      }, 2000);
     } else {
       recordLoss();
       sounds.playLoss();
-    }
-
-    setTimeout(() => {
-      if (isWin) {
-        setGamePhase('continue_prompt');
-      } else {
+      setTimeout(() => {
         setGamePhase('showing_ball');
-      }
-    }, 3500);
+      }, 3500);
+    }
   };
 
   return (
@@ -169,7 +167,6 @@ export const ShellGame: React.FC = () => {
           {gamePhase === 'shuffling' && t.shuffling}
           {gamePhase === 'guessing' && t.whereIsBall}
           {gamePhase === 'revealing' && (lastResult === 'win' ? t.foundIt : t.wrongCup)}
-          {gamePhase === 'continue_prompt' && 'Cashout or Double Up!'}
         </h2>
       </div>
 
@@ -194,7 +191,7 @@ export const ShellGame: React.FC = () => {
             yOffset = isBallCup ? -60 : 0;
           } else if (gamePhase === 'guessing') {
             cursorClass = "cursor-pointer md:hover:-translate-y-2 active:scale-95";
-          } else if (gamePhase === 'revealing' || gamePhase === 'continue_prompt') {
+          } else if (gamePhase === 'revealing') {
             yOffset = -60;
             if (!isBallCup) opacity = 0.5; 
           }
@@ -281,31 +278,26 @@ export const ShellGame: React.FC = () => {
         </div>
       )}
 
-      {gamePhase === 'continue_prompt' && (
-        <div className="relative z-10 flex flex-col sm:flex-row justify-center mt-3 gap-3">
+      {gamePhase === 'guessing' && currentMultiplier > 0 && (
+        <div className="relative z-10 flex justify-center mt-4">
           <button
             onClick={cashout}
-            className="px-6 py-2.5 rounded-xl bg-emerald-600 active:scale-95 transition-transform text-white font-extrabold tracking-wider text-base"
+            className="px-10 py-3 rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 active:scale-95 transition-all text-white font-black tracking-wider shadow-[0_4px_20px_rgba(16,185,129,0.5)] border border-emerald-300/50 flex flex-col items-center"
           >
-            Cashout Br {lastWinAmount.toFixed(2)}
-          </button>
-          <button
-            onClick={handleShuffleStart}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 active:scale-95 transition-transform text-table-dark font-extrabold tracking-wider text-base"
-          >
-            Play ({currentMultiplier === 0 ? 1.9 : (currentMultiplier * 1.8).toFixed(1)}x)
+            <span className="text-sm opacity-90 leading-tight">CASHOUT</span>
+            <span className="text-xl leading-tight">Br {lastWinAmount.toFixed(2)}</span>
           </button>
         </div>
       )}
 
       <div className={`relative z-10 transition-opacity duration-300 flex justify-center ${
-        gamePhase === 'revealing' || gamePhase === 'continue_prompt' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
+        gamePhase === 'revealing' ? 'opacity-100 mt-2' : 'opacity-0 pointer-events-none h-0'
       }`}>
         <div className="max-w-md mx-auto bg-black/40 rounded-xl p-3 flex flex-col items-center text-center">
           {lastResult === 'win' ? (
             <div className="text-emerald-400 font-bold text-base flex items-center gap-2">
               <Trophy className="w-4.5 h-4.5" /> 
-              {gamePhase === 'continue_prompt' ? `At Risk: Br ${lastWinAmount.toFixed(2)} (${currentMultiplier.toFixed(1)}x)` : `+Br ${lastWinAmount.toFixed(2)}`}
+              {`At Risk: Br ${lastWinAmount.toFixed(2)} (${currentMultiplier.toFixed(1)}x)`}
             </div>
           ) : (
             <div className="text-rose-400 font-bold text-base flex items-center gap-2">

@@ -8,7 +8,7 @@ import { persist } from 'zustand/middleware';
  * - guessing: Shuffle done. User taps a cup to guess where ball went.
  * - revealing: Result is shown for 2 seconds before auto-reset.
  */
-export type GamePhase = 'showing_ball' | 'shuffling' | 'guessing' | 'revealing' | 'continue_prompt';
+export type GamePhase = 'showing_ball' | 'shuffling' | 'guessing' | 'revealing';
 export type GameResult = 'win' | 'loss' | null;
 
 interface GameState {

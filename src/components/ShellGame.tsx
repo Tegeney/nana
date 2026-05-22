@@ -172,7 +172,7 @@ export const ShellGame: React.FC = () => {
             <motion.div 
               key={cupId}
               initial={false}
-              animate={{ x: xOffset, y: yOffset, opacity }}
+              animate={{ x: xOffset, opacity }}
               transition={{
                 duration: 0.18,
                 ease: "easeInOut"
@@ -193,7 +193,10 @@ export const ShellGame: React.FC = () => {
               )}
 
               {/* Simplified Flat SVG Cup for Mobile Performance */}
-              <div className="w-full aspect-[4/5] flex justify-center items-end transition-transform duration-300 z-10 relative">
+              <div 
+                className="w-full aspect-[4/5] flex justify-center items-end transition-transform duration-300 z-10 relative"
+                style={{ transform: `translateY(${yOffset}px)` }}
+              >
                 <svg viewBox="0 0 100 120" className="w-[110%] h-auto max-h-full">
                   <path d="M 30 15 C 30 8, 70 8, 70 15 L 85 105 C 85 115, 15 115, 15 105 Z" fill="#8b4513" />
                   <ellipse cx="50" cy="14" rx="20" ry="6" fill="#5c2d0c" />
